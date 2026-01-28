@@ -46,10 +46,10 @@
 
 % ==================================
 
-\section{引入}
+\section{背景介绍}
 \begin{frame}{LLM-as-a-judge}
     \begin{block}{LLM-as-a-judge简介}
-        LLM-as-a-judge是我们今天的主题的引子，他们的功能是相同的，都是充当一个Graders,Assessors，例如评价一个文本写的怎么样，通不通顺，用词是否优美。只是评价者从单个LLM变成了多个Agent协作。
+        LLM-as-a-judge是我们今天的主题的背景，他们的功能是类似的，都是充当一个Graders,Assessors，例如评价一段文本写的怎么样，通不通顺，用词是否优美或者正确度如何。只是评价者从单个LLM变成了多个Agent协作。
     \end{block}
 \end{frame}
 
@@ -84,12 +84,12 @@
 \end{frame}
 % ==================================
 
-
-\begin{frame}{Agent的三个优势：鲁棒性}
+\section{从LLM到Agent}
+\begin{frame}{Agent的三个优势：鲁棒性}。 
     \begin{columns}[T, onlytextwidth]
         \begin{column}{0.6\textwidth}
             \begin{block}{}
-                首先,在 LLM-as-a-judge 综述\cite{chang2023survey}第43页6.1节中就提到，单一的LLM在面对某些输入时会存在 $bias$ ,例如自己生成的文本或者符合自己生成风格的文本，同时在6.2节中在面对 $Adversarial Attacks$ ,即通过某种输入方式操纵的得分结果，同时单个LLM（尤其是开源模型），有可能面对 $Jailbreaking$ 的攻击。而通过 Agent 的方式，因为 Agnet 在将任务分解成多个子任务，同时在子任务中间检测中间插入搜索，工具调用等方式，引用各种专业知识进行解答，这样就可以有效的避免这些问题，从而提升鲁棒性。同时对于单个 LLM 存在的 $bias$  问题，因为 Agent 的辩论机制，可以让多个 Agent 互相辩论，从而减少单个 LLM 的 $bias$ 影响。例如，对于一篇论文的评价，可能 LLM 只观察其句子是否通顺从而给出一个打分，但是 Agent 可以让一个 Agent 负责检查论文的创新性，另一个 Agent 负责检查论文的实验代码的运行，最后再让一个 Agent 负责综合打分。
+                首先,在 LLM-as-a-judge 综述\cite{chang2023survey}第43页6.1节中就提到，单一的LLM在面对某些输入时会存在 $bias$ ,例如自己生成的文本或者符合自己生成风格的文本，同时在6.2节中在面对 $Adversarial Attacks$ ,即通过某种输入方式操纵的得分结果，同时单个LLM（尤其是开源模型），有可能面对 $Jailbreaking$ 的攻击。而通过 Agent 的方式，因为 Agnet 在将任务分解成多个子任务，同时在子任务中间检测中间插入搜索，工具调用等方式，引用各种专业知识进行解答，这样就可以有效的避免这些问题，从而提升鲁棒性。同时对于单个 LLM 存在的 $bias$  问题，因为 Agent 的\alert{法庭辩论机制}，可以让多个 Agent 互相辩论，从而减少单个 LLM 的 $bias$ 影响。例如，对于一篇论文的评价，可能 LLM 只观察其句子是否通顺从而给出一个打分，但是 Agent 可以让一个 Agent 负责检查论文的创新性，另一个 Agent 负责检查论文的实验代码的运行，最后再让一个 Agent 负责综合打分。
             \end{block}
         \end{column}
 
@@ -148,7 +148,7 @@
 
         \begin{column}{0.48\textwidth}
             \begin{block}{Collective Consensus }
-                这种利用多个 LLM 的集体意识，可以有效避免 bias 和 幻觉问题。不过这个避免 bias 的原理并不简单的，一个 LLM 与另一个 LLM 之间偏见的抵消。而是通过一种法庭辩论的机制，让多个 Agent 相互辩论，从而得出结果。在 Multi-Agent-as-Judge\cite{chen2025maj} 3.2节中提出的 MAJ-Eval 方法中 ，第一阶段会有一个 LLM 识别输入的利益相关者，然后根据每个利益相关者构建一个相对应的人设，人设被实例化后，先进行自我裁判，独立评估，然后多个智能体组内自由辩论，然后由一个"法官"智能体进行最终裁决。
+                这种利用多个 LLM 的集体意识，可以有效避免 $bias$ 和 幻觉问题。不过这个避免 $bias$ 的原理并不简单的，一个 LLM 与另一个 LLM 之间偏见的抵消。而是通过一种法庭辩论的机制，让多个 Agent 相互辩论，从而得出结果。在 Multi-Agent-as-Judge\cite{chen2025maj} 3.2节中提出的 \alert{MAJ-Eval} 方法中 ，第一阶段会有一个 LLM 识别输入的利益相关者，然后根据每个利益相关者构建一个相对应的人设，人设被实例化后，先进行自我裁判，独立评估，然后多个智能体组内自由辩论，然后由一个"法官"智能体进行最终裁决。
             \end{block}
         \end{column}
 
@@ -198,7 +198,7 @@
     \begin{columns}[T, onlytextwidth]
         \begin{column}{0.48\textwidth}
             \begin{block}{Intermediate State}
-                在任务分解成多个子任务中，评估也被分解成多步，在多步评估的设置中，Intermediate State 主要是指在每个子任务之间保存中间状态，从而让后续的子任务可以根据前面的结果进行调整。比如前面提到 HERMES 框架中就会保留前面步骤的证明结果，从而让后续的步骤可以根据前面的结果进行调整。
+                在任务分解成多个子任务中，评估也被分解成多步，在多步评估的设置中，\alert{Intermediate State} 主要是指在每个子任务之间保存中间状态，从而让后续的子任务可以根据前面的结果进行调整。比如前面提到 HERMES 框架中就会保留前面步骤的证明结果，从而让后续的步骤可以根据前面的结果进行调整。
             \end{block}
         \end{column}
 
@@ -214,7 +214,7 @@
     \begin{columns}[T, onlytextwidth]
         \begin{column}{0.48\textwidth}
             \begin{block}{Training-Time Optimization}
-                Training-Time Optimization 是指在训练时，更新模型参数，利用监督微调和强化学习去实现更可靠的评估。这一点主要是规范 Agent 判断行为，让模型遵循明确的标准。例如 ARM-Thinker\cite{ding2025arm} 3.2 节中所提到的 Supervised Fine-Tuning \& Cold Start Generation ，ARM-Thinker 是一个多模态集成的工具，所以会创建专门的数据集，教模型在什么情况下该用什么工具
+                Training-Time Optimization 是指在训练时，更新模型参数，利用监督微调和强化学习去实现更可靠的评估。这一点主要是规范 Agent 判断行为，让模型遵循明确的标准。例如 ARM-Thinker\cite{ding2025arm} 3.2 节中所提到的 Supervised Fine-Tuning \& Cold Start Generation ，ARM-Thinker 是一个多模态集成的工具，在实验中会创建专门的数据集，专门模型在什么情况下该用什么工具
             \end{block}
         \end{column}
 
