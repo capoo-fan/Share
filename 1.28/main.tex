@@ -89,7 +89,7 @@
     \begin{columns}[T, onlytextwidth]
         \begin{column}{0.6\textwidth}
             \begin{block}{}
-                首先,在 LLM-as-a-judge 综述\cite{chang2023survey}第43页6.1节中就提到，单一的LLM在面对某些输入时会存在 $bias$ ,例如自己生成的文本或者符合自己生成风格的文本，同时在6.2节中在面对 $Adversarial Attacks$ ,即通过某种输入方式操纵的得分结果，同时单个LLM（尤其是开源模型），有可能面对 $Jailbreaking$ 的攻击。而通过 Agent 的方式，因为 Agnet 在将任务分解成多个子任务，同时在子任务中间检测中间插入搜索，工具调用等方式，引用各种专业知识进行解答，这样就可以有效的避免这些问题，从而提升鲁棒性。同时对于单个 LLM 存在的 $bias$  问题，因为 Agent 的\alert{法庭辩论机制}，可以让多个 Agent 互相辩论，从而减少单个 LLM 的 $bias$ 影响。例如，对于一篇论文的评价，可能 LLM 只观察其句子是否通顺从而给出一个打分，但是 Agent 可以让一个 Agent 负责检查论文的创新性，另一个 Agent 负责检查论文的实验代码的运行，最后再让一个 Agent 负责综合打分。
+                首先,在 LLM-as-a-judge 综述\cite{chang2023survey}第43页6.1节中就提到，单一的LLM在面对某些输入时会存在 $bias$ ,例如自己生成的文本或者符合自己生成风格的文本，同时在6.2节中在面对 $Adversarial Attacks$ ,即通过某种输入方式操纵的得分结果，而且单个LLM（尤其是开源模型），有可能面对 $Jailbreaking$ 的攻击。而通过 Agent 的方式，因为 Agnet 在将任务分解成多个子任务，同时在子任务中间检测中间插入搜索，工具调用等方式，引用各种专业知识进行解答，这样就可以有效的避免这些问题，从而提升鲁棒性。同时对于单个 LLM 存在的 $bias$  问题，因为 Agent 的\alert{法庭辩论机制}，可以让多个 Agent 互相辩论，从而减少单个 LLM 的 $bias$ 影响。例如，对于一篇论文的评价，可能 LLM 只观察其句子是否通顺从而给出一个打分，但是 Agent 可以让一个 Agent 负责检查论文的创新性，另一个 Agent 负责检查论文的实验代码的运行，最后再让一个 Agent 负责综合打分。
             \end{block}
         \end{column}
 
@@ -204,7 +204,7 @@
 
         \begin{column}{0.48\textwidth}
             \begin{alertblock}{Personalized Context}
-                Personalized Context 是 Agent 可以通过之前的回答调整评判的标准，类似于PersRMR1,FSPO\cite{singh2025fspo}会存储偏好标签和历史案例，RLPA\cite{zhao2025teaching},SYnthesizeMe\cite{ryan2025synthesizeme}会生成用户画像。例如 RLPA\cite{zhao2025teaching} 在第三节提出的方法，通过强化学习进行个性化对齐，生成用户画像。首先 RLPA 在每一轮的对话中，不仅生成回复，还会更新它心中对于用户的印象，而为了训练 Agent ，使用模拟用户与 Agent 进行对话，看 Agent 生成的用户画像是否与模拟用户的真实画像一致，将回答的质量和与真实画像的对应程度作为奖励训练 Agent,从而提升 Agent 猜测用户画像的能力。
+                Personalized Context 是 Agent 可以通过之前的回答调整评判的标准，类似于PersRMR1,FSPO\cite{singh2025fspo}会存储偏好标签和历史案例，RLPA\cite{zhao2025teaching},SYnthesizeMe\cite{ryan2025synthesizeme}会生成用户画像。例如 RLPA\cite{zhao2025teaching} 在第三节提出的方法，通过强化学习进行个性化对齐，生成用户画像。首先 \alert{RLPA}  在每一轮的对话中，不仅生成回复，还会更新它心中对于用户的印象，而为了训练 Agent ，使用模拟用户与 Agent 进行对话，看 Agent 生成的用户画像是否与模拟用户的真实画像一致，将回答的质量和与真实画像的对应程度作为奖励训练 Agent,从而提升 Agent 猜测用户画像的能力。
             \end{alertblock}
         \end{column}
     \end{columns}
