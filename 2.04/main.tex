@@ -1,0 +1,154 @@
+\documentclass[aspectratio=169, 10pt]{beamer} 
+\usepackage{ctex}       % 中文支持
+\usepackage{amsmath}    % 数学公式增强
+\usepackage{graphicx}   % 图片支持
+\usepackage{booktabs}   % 三线
+\usepackage{listings}   % 代码
+\usepackage{xcolor}     % 颜色支持
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{本节内容} % 分隔页的标题，也可以叫 "目录" 或 "Overview"
+    % currentsection: 高亮当前节
+    % hideallsubsections: 隐藏所有小节（让目录更简洁，可选）
+    \tableofcontents[currentsection, hideallsubsections] 
+  \end{frame}
+}
+
+\usetheme{Madrid}
+\usecolortheme{whale}  
+\usecolortheme{orchid}  
+
+\setbeamertemplate{navigation symbols}{}
+
+\setmainfont{Times New Roman} 
+\setsansfont{Arial}
+
+
+\title[]{Agent-X 和 Fact-Audit 论文介绍} % []内为底部显示的简短标题
+\subtitle{组会分享}
+\author[]{LiuKai} % []内为底部显示的简短名字
+\date[]{\date{\today}} 
+
+
+% 正文开始 
+\begin{document}
+
+% --- 封面页 ---
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% --- 目录页 ---
+\begin{frame}{目录}
+    \tableofcontents
+\end{frame}
+
+
+\section{Agent-X 论文介绍}
+
+\begin{frame}{Introduction}
+    \begin{columns}[T, onlytextwidth]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{主要工具}
+                本篇文章的创新点除了利用 Agent 协助评价之外，还提出了从语言学的角度去评判是否是 LLM 生成的文章。大致的思路就是先用 LLM 从多个维度独立的去评判是否是机器生成文本，同时还要生成评判意见，最后哦由一个 Meta Agent 来综合这些维度的评判结果，给出最终的结论。这样的检测方法的优点是:
+                \begin{itemize}
+                    \item 无阈值，无需特定的数据集调试阈值
+                    \item 可以生成详细的评判意见
+                \end{itemize}
+                其中这篇论文还有一个创新点是，将常用的评判指标将 AUROC 换成 Accuracy。主要理由是:论文的方法并不会输出一个模棱两可的分数，而是 Yes/No 的二分类结果，同时我们后面也会提到作者利用 Prompt 的校准工作。
+
+            \end{block}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{block}{Guidelines}
+                \small
+                \textbf{语义维度：}\\
+                人类文本：做出断言的时候直接，简洁，没有大量的修饰。 \\
+                机器文本: 一般在做出声明时表现得谨慎、平衡或中立。
+
+                \textbf{文体维度：}\\
+                Precision and Conciseness\\
+                人类文本:简明扼要，直接引入概念。 \\
+                机器文本: 平衡、解释性强且措辞谨慎\\
+
+                \textbf{结构维度：}\\
+                人类文本:句式结构与节奏多变
+                机器文本:结构统一可预测且高度一致
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Methodology}
+    \small
+   \textbf{Agent 协作机制:} \
+        论文的方法主要是分为三个 Agent 协同工作:
+        \begin{itemize}
+            \item Router Agent：负责利用 LLM 分析每段输入文本，联合推断其主题领域（例如：医学、法律、文学）和文体属性（例如：正式语体、论证连贯性），然后激活最相关的 Guidelines  Base Agent 进行评判，其他不相关的 Base Agent 则保持休眠。
+            \item Base Agent：每个 Base Agent 都会根据 Router Agent 分发的 Guidelines, 对文本进行独立评判，输出二分类结果和评判意见。
+            \item Meta Agent：负责收集所有 Base Agent 的评判结果和意见，并进行综合分析，最终输出文本是否为机器生成的结论。
+        \end{itemize}
+        例如一篇医学论文:Router Agent 会识别出其主题为医学，然后激活“语义清晰度"和"结构精确性"的 Base Agent 进行评判，最后 Meta Agent 会综合所有激活的 Base Agent 的评判结果，给出最终结论。
+    \vspace{-0.5em}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,height=0.4\textheight,keepaspectratio]{figures/Agentx_workflow.png}
+        \caption{Agent-X Methodology}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Methodology}
+    关于增加精度，作者运用了 Prompt 校准的技术，避免 LLM 在判断文本中过度自信的问题。在输入给 Base Agent 的 Prompt 中，有五个对称的的词：very cautious, cautious, vanilla, confident, and very confident。
+    据此， Base Agent 要输出三个内容：
+    \begin{itemize}
+        \item 文本是否为机器生成的二分类结果（Yes/No）
+        \item 对应的置信度等级（从 very cautious 到 very confident 五个等级）
+        \item 评判意见
+    \end{itemize}
+    其中的计算公式是:
+    \begin{equation*}
+        \kappa_{\mathrm{ans}} = \frac{1}{|\mathcal{P}|} \max_{y\in\{\mathrm{AI},\mathrm{Human}\}} \sum_k \mathbb{I}[f_k(x)=y]
+    \end{equation*}
+    \begin{equation*}
+        \mu_c = \frac{1}{|\mathcal{P}|} \sum_k c_k(x),\qquad
+        \sigma_c = \sqrt{\frac{1}{|\mathcal{P}|} \sum_k \bigl(c_k(x)-\mu_c\bigr)^2},\qquad
+        \kappa_{\mathrm{conf}} = \frac{1}{1+\sigma_c/\mu_c}.
+    \end{equation*}
+    \begin{equation*}
+        C_{\mathrm{cal}}(x) = \mu_c\cdot \kappa_{\mathrm{ans}} \cdot \kappa_{\mathrm{conf}}.
+    \end{equation*}
+    \begin{equation*}
+        k^* = \arg\min_k \left| c_k(x) - C_{\mathrm{cal}}(x) \right|,\qquad f_{\mathrm{final}}(x) = f_{k^*}(x).
+    \end{equation*}
+     $$c_{cal} = \text{平均分} (\mu_c) \times \text{答案是否一致} (\kappa_{ans}) \times \text{置信度的一致} (\kappa_{conf})$$
+\end{frame}
+
+\begin{frame}{Methodologies}
+    而在 Meta Agent 中，如果一个智能体非常自信（且经过校准验证），而另一个智能体犹豫不决，Meta Agent 会更听从自信那个智能体的意见，还会“阅读”基础智能体写的理由。如果理由写得逻辑严密、证据确凿，该智能体的意见会被优先考虑。 如果被激活的专家意见不一致，会结合语境评估并调和，分析为什么会有分歧，并试图达成一个基于共识的结论。最后生成评价意见，与 Base Agent 类似，Meta Agent 也会通过 Steering Conf 进行校准
+     \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,height=0.65\textheight,keepaspectratio]{figures/Agentx_case.png}
+        \caption{Agent-X 演示}
+    \end{figure}
+\end{frame}
+
+
+\section{Fact-Audit 论文}
+
+
+
+\section{参考文献}
+\begin{frame}[allowframebreaks]{参考文献}
+    \tiny
+    % 设定引用样式：
+    % unsrt: [1] 排序：引用顺序 
+    \bibliographystyle{unsrt}
+    \nocite{*}
+    \bibliography{refs}
+\end{frame}
+
+
+
+
+\end{document}
