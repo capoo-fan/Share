@@ -1,0 +1,83 @@
+\documentclass[aspectratio=169, 10pt]{beamer} 
+\usepackage{ctex}       % 中文支持
+\usepackage{amsmath}    % 数学公式增强
+\usepackage{graphicx}   % 图片支持
+\usepackage{booktabs}   % 三线
+\usepackage{listings}   % 代码
+\usepackage{xcolor}     % 颜色支持
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{本节内容} % 分隔页的标题，也可以叫 "目录" 或 "Overview"
+    % currentsection: 高亮当前节
+    % hideallsubsections: 隐藏所有小节（让目录更简洁，可选）
+    \tableofcontents[currentsection, hideallsubsections] 
+  \end{frame}
+}
+
+\usetheme{Madrid}
+\usecolortheme{whale}  
+\usecolortheme{orchid}  
+
+\setbeamertemplate{navigation symbols}{}
+
+\setmainfont{Times New Roman} 
+\setsansfont{Arial}
+
+
+\title[]{正标题} % []内为底部显示的简短标题
+\subtitle{这里是副标题或课程名称}
+\author[]{LiuKai} % []内为底部显示的简短名字
+\date[]{\date{\today}} 
+
+
+% 正文开始 
+\begin{document}
+
+% --- 封面页 ---
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% --- 目录页 ---
+\begin{frame}{目录}
+    \tableofcontents
+\end{frame}
+
+
+
+\begin{frame}{}
+    \begin{columns}[T, onlytextwidth]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{ }
+                
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{}
+               
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+\section{参考文献}
+\begin{frame}[allowframebreaks]{参考文献}
+    \tiny
+    % 设定引用样式：
+    % unsrt: [1] 排序：引用顺序 
+    \bibliographystyle{unsrt}
+    \nocite{*}
+    \bibliography{refs}
+\end{frame}
+
+
+
+
+\end{document}
