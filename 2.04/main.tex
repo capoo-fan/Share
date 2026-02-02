@@ -138,6 +138,108 @@
 
 
 
+% TODO :加入对比实验
+\begin{frame}{Introduction} 
+    这篇论文主要是提出了一个生成用于测试 LLM 检测事实能力的数据集，这里面使用了多个 LLM 进行协作。我们先介绍它创建的数据集与其他静态数据集的区别和优劣。 \
+    首先是在流程上，原来的是由人类专家给出数据，然后给 LLM 进行检测，直接评判计算准确率。在 Fact-Audit 中，使用 Agent 生成数据，这样就节省了人类成本，然后还有对 LLM 生成的检测信息进行评价，最后把结果反馈给 Agent 进行迭代优化。 \
+    原有检测方法的缺点是:
+    \begin{itemize}
+        \item 静态数据集，如果预先训练过就会不真实
+        \item 需要人工专家
+        \item 只关注结果而忽略过程
+    \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,height=0.45\textheight,keepaspectratio]{figures/Fact_cmp.png}
+        \caption{对比图}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Methodology} 
+    在 Methodology 上，作者解释原有的取样方法的弊端，原有的采样方法属于蒙特卡洛采样方法，在数学上十分低效，数学上的低效 ($O(1/\sqrt{N})$) 蒙特卡洛采样的收敛速度很慢。意味着你需要抽取海量的测试题（$N$ 要非常大），才能准确评估出一个模型到底行不行。如果题目太少，评估结果就不可靠。同时还有个最大的缺点:大多数常见的、简单的知识。模型在训练阶段已经见得多了，随机抽样很容易抽到这些，导致评分虚高。\
+    因此作者调整了采样和评分，首先定义标准期望:
+    \begin{equation*}
+        \mathbb{E}_{p(x)} [\mathcal{F}_\alpha(x)] = \int p(x) \mathcal{F}_\alpha(x) \mathrm{d}x
+    \end{equation*}
+    受重要性采样 (Importance Sampling) 的启发，引入提议分布 $q(x)$ 来提高效率，该过程调整为：
+    \begin{equation*}
+         \mathbb{E}_{p(x)} [\mathcal{F}_\alpha(x)] = \int q(x) \mathcal{F}_\alpha(x) \frac{p(x)}{q(x)} \mathrm{d}x = \mathbb{E}_{q(x)} \left[ \mathcal{F}_\alpha(x) \frac{p(x)}{q(x)} \right]
+    \end{equation*}
+    简单来说，就是引入 $q(x)$ ,来让难题有更高的采样概率，同时还调整了不同题目的分数，如果题目很难，我们可以看到，得分就会低，这样才能综合评估能力。
+\end{frame}
+
+\begin{frame}{Fact-Audit Algorithm}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.55\textwidth}
+            \begin{block}{Algorithm 1 Fact-Audit}
+                \scriptsize
+                \setlength{\itemsep}{0.15em}
+                \begin{enumerate}
+                    \item 初始化事实核查测试场景 $\Theta_0$，并设置记忆库 $\mathcal{M}=\varnothing$。
+                    \item 对于 $i := 0$ 到 $n$ 重复：
+                    \item \quad 将候选集 $\mathcal{X}$ 置空。
+                    \item \quad \textbf{Stage 1: Prototype Emulation}
+                    \item \quad 当 $|\mathcal{X}| < k$ 时：
+                    \item \qquad Appraiser: $\theta_i \sim P(\Theta_i)$。
+                    \item \qquad Inquirer: $x \sim q(x|\theta_i)$。
+                    \item \qquad 若 $x$ 通过质量检测，则并入 $\mathcal{X}$。
+                    \item \quad \textbf{Stage 2: Fact Verification with Justification}
+                    \item \quad $\mathcal{M} := \mathcal{F}_\alpha(\mathcal{X}) \dfrac{p(x)}{q(x|\Theta_i)}$。
+                    \item \quad 对于 $j := 0$ 到 $m$ 重复：
+                    \item \qquad Prober: $x \sim \rho(\mathcal{M})$。
+                    \item \qquad $\mathcal{M} := \mathcal{M} \cup \left\{ \mathcal{F}_\alpha(x) \dfrac{p(x)}{q(x|\theta_i)} \right\}$。
+                    \item \quad \textbf{Stage 3: Adaptive Updating}
+                    \item \quad 更新 $\Theta_{i+1} \sim \pi(\Theta_{i+1}|\Theta_i,\mathcal{M})$。
+                    \item 最终返回记忆库 $\mathcal{M}$。
+                \end{enumerate}
+            \end{block}
+        \end{column}
+        \begin{column}{0.43\textwidth}
+            \begin{block}{备注}
+                \small
+                可以看到，Appraiser 根据当前参数 $\Theta_i$ 采样一个具体的测试方向 $\theta_i$ 然后 Inquirer 根据方向 $\theta_i$ 生成具体的问题 $x$ ， Quality Inspector 检查 $x$ 是否符合逻辑、是否有事实错误。只有合格的 $x$ 才会加入集合 $\mathbb{X}$ 。 
+
+                $\mathcal{F}_{\alpha}(\mathbb{X})$ 是让被测模型回答这些问题。分式 $\frac{p(\mathbb{X})}{q(\mathbb{X}|\Theta_i)}$ 是重要性权重。
+
+                最后 Adaptive Updating. $\Theta_{i+1} \sim \pi(\Theta_{i+1}|\Theta_i, \mathcal{M})$ 根据这一轮的测试结果，更新下一轮的生成参数 $\Theta$。
+                \vspace{2.5em}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Methodology} 
+    在出题具体实现上，文章实现了三个分工明确的智能体。
+    \begin{itemize}
+        \item  Appraiser：主要负责出考纲，考纲分为三个经典类别，复杂主张 (Complex Claims)：需要多步推理的。假新闻 (Fake News)：故意误导的信息。社会谣言 (Social Rumors)：社交媒体上流传的传闻。
+        \item  Inquirer：根据给定的大纲出考题，考察方式也分三种：claim 模式只依靠 LLM 自身知识回答；evidence 模式引入维基百科证据检验推理；wisdom-of-crowds 模式提供模拟社交媒体评论考察群体智慧利用能力。
+        \item Quality Inspector：负责“审题和校对”，确保题目质量与多样性。
+    \end{itemize}
+    Evaluator 则对 LLM 的回答进行评分，$\mathcal{F}_{\alpha}(x)$ 输出包含评分 $s$ 与评语 $c$。Prober 读取记忆库 $\mathcal{M}$，定位薄弱题目并重新设计试题。
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,height=0.25\textheight,keepaspectratio]{figures/Fact_framework.png}
+        \caption{Fact-Audit 流水线}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Methodology} 
+    对于上述返回出来的结果， Appraiser 会针对记忆池 $\mathcal{M}$ 中低评分的题目进行分析，然后着重出这一方面的题目，也就是抓着 LLM 的弱点来出题，从而提高采样效率。\
+    而作者在 Metric 上设置了三个指标
+    \begin{itemize}
+        \item  IMR: 代表低分事实核查响应占问题总数的比例。
+        \item  JFR: 目标 LLM 进行了正确的判决预测但提供的理由较差的案例百分比。
+        \item Grade: 分数越高，说明模型的回答越准确、理由越充分。
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Limitations} 
+    这篇文章的局限性主要是它只负责找问题而不负责解决问题，它可以非常精准的发现 LLM 在事实核查方面的问题，但是并没有提供解决方案。\
+    未来可以考虑让框架不仅能审计模型，还能生成高质量的训练数据。这样，开发者就可以利用这些数据来微调模型，真正实现模型性能的提升，形成“评估-改进”的闭环 。
+\end{frame}
+
 \section{参考文献}
 \begin{frame}[allowframebreaks]{参考文献}
     \tiny
@@ -147,8 +249,5 @@
     \nocite{*}
     \bibliography{refs}
 \end{frame}
-
-
-
 
 \end{document}
