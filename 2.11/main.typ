@@ -2,14 +2,14 @@
 // main.typ - Typst 学术写作模版
 // ============================================================
 
-#import "lib.typ": *
+#import "../Template Typst/lib.typ": *
 
 // --- 全局页面设置 ---
 #set text(font: ("New Computer Modern", "Source Han Serif SC", "SimSun"), size: 11pt, lang: "zh")
 #set par(justify: true, leading: 0.8em, first-line-indent: 2em)
 #set heading(numbering: "1.1")
 #set math.equation(numbering: "(1)")
-#set figure(placement: auto)
+#show figure.where(kind: table): set figure.caption(position: top)
 
 // --- 封面页 ---
 #page(numbering: none, margin: (top: 3cm, bottom: 3cm, left: 2.5cm, right: 2.5cm))[
@@ -17,7 +17,6 @@
   #align(center)[
     #v(2cm)
 
-    #text(size: 16pt, tracking: 6pt, weight: "bold")[某某大学]
 
     #v(0.8cm)
 
@@ -25,12 +24,13 @@
 
     #v(0.8cm)
 
-    #text(size: 28pt, weight: "bold")[论文标题]
+    #text(size: 28pt, weight: "bold")[关于文本鉴伪的两篇论文]
 
-    #text(size: 14pt, fill: luma(80))[Paper Title in English]
+    #text(size: 14pt, fill: luma(80))[2026.2.11分享]
 
     #v(0.8cm)
 
+    #text(size: 14pt, fill: luma(80))[LiuKai]
     #thick-line
 
     #v(2cm)
@@ -42,12 +42,6 @@
       columns: (80pt, 200pt),
       row-gutter: 16pt,
       align: (right, left),
-
-      [*学　　院：*], [计算机科学与技术学院],
-      [*专　　业：*], [计算机科学与技术],
-      [*学生姓名：*], [张　三],
-      [*学　　号：*], [20240001],
-      [*指导教师：*], [李四 教授],
     )
   ]
 
@@ -71,156 +65,97 @@
 #set page(numbering: "1", number-align: center)
 #counter(page).update(1)
 
-// ============================================================
-//  第一章 引言
-// ============================================================
-= 引言 <intro>
 
-本模版演示了 Typst 学术写作的基本结构，包括封面、目录、图片、表格以及参考文献引用。
 
-Typst 是一种现代排版系统，具有简洁的语法和快速的编译速度，适合学术论文写作 @wikipedia_iosevka。相较于传统的 LaTeX，Typst 提供了更为直观的标记语言，同时保持了高质量的排版输出 @knuth1984texbook。
+= Ghostbuster 论文
 
-#thin-line
+== Introduction
 
-== 研究背景
-
-随着学术写作需求的不断增长，研究者需要一套高效、易用的排版工具。传统工具虽然功能强大，但学习曲线陡峭 @lamport1994latex。本文展示了 Typst 模版的基本用法。
-
-== 研究目标
-
-本研究的主要目标如下：
-
-+ 构建一个简洁实用的 Typst 学术模版
-+ 演示图片、表格、公式的使用方法
-+ 展示参考文献的引用方式
-
-// ============================================================
-//  第二章 方法
-// ============================================================
-= 方法
-
-== 公式示例
-
-行内公式 $E = m c^2$ 可以直接嵌入文本中。独立公式如下：
-
-$ L(theta) = sum_(i=1)^(N) log p(x_i | theta) $ <eq:likelihood>
-
-我们可以通过 @eq:likelihood 来引用该公式。
-
-== 算法描述
-
-#info-box[
-  本节介绍了实验中使用的主要算法流程。具体实现细节详见源代码。
-]
-
-算法的核心步骤为：
-
-+ 数据预处理与特征提取
-+ 模型参数初始化
-+ 迭代优化目标函数
-+ 评估并输出结果
-
-// ============================================================
-//  第三章 实验
-// ============================================================
-= 实验
-
-== 实验设置
-
-实验在以下环境中进行，硬件与软件配置见 @tab:env。
+本文全称 "Ghostbuster: Detecting Text Ghostwritten by Large Language Models" ,发表在 ICLR 2024 上。文章主要提出了一种的方法来检测文本，把文本经过 概率计算-特征选择-分类器计算 的流程进行判别。简单来说，作者提出了一种方法，先通过暴力枚举从所有特征中最值得计算的特征，然后拿这些特征进行计算，掌握这些特征之后，就使用一个简单的线性分类器进行鉴别。
 
 #figure(
-  table(
-    columns: (1fr, 2fr),
-    align: (center, left),
-    stroke: 0.5pt,
+  image("figures/overview.pdf", width: 80%),
+  caption: "Ghostbuster 框架示意图",
+)
 
-    table.header(
-      [*配置项*], [*详细信息*],
-    ),
+== Methodology
 
-    [操作系统],  [Ubuntu 22.04 LTS],
-    [处理器],    [Intel i9-13900K],
-    [内存],      [64 GB DDR5],
-    [GPU],       [NVIDIA RTX 4090 (24 GB)],
-    [语言],      [Python 3.11],
-    [框架],      [PyTorch 2.1],
+=== Probability Computation
+
+关于概率计算部分，作者首先定义了一系列操作（see @Table1）， Vector FUnctions 之间可以自由组合，对向量进行操作，然后 Scalar Functions 是最后一步，把操作出来的向量变成标量。
+#figure(
+ three-line-table(
+    columns: (1fr, 1fr),
+    header:([*Vector Functions*], [*Scalar Functions*]),
+    [$f_"add" = p_1 + p_2$], [$f_"max" = max p$],
+    [$f_"sub" = p_1 - p_2$], [$f_"min" = min p$],
+    [$f_"mul" = p_1 dot.op p_2$], [$f_"avg" = 1/|p| sum_i p_i$],
+    [$f_"div" = p_1 / p_2$], [$f_"avg-top25" = 1/|p| sum_(i in T_p) p_i$],
+    [$f_(>) = bb(1)_{p_1 > p_2}$], [$f_"len" = |p|$],
+    [$f_(<) = bb(1)_{p_1 < p_2}$], [$f_"L2" = ||p||_2$],
+    [], [$f_"var" = 1/n sum_i (p_i - mu_p)^2$],
   ),
-  caption: [实验环境配置],
-) <tab:env>
+  caption: "Ghostbuster定义向量操作列表"
+)<Table1>
 
-== 实验结果
+=== Feature Selection
 
-各方法在测试集上的表现如 @tab:results 所示。
+定义了以上操作，作者先用Unigram, Trigram, GPT-3 Ada, Davinci 模型的Token序列作为输入向量，然后经过 Vector Functions 和 Scalar Functions 的任意组合，暴力枚举出所有可能的特征组合，最后得到一个特征集合 S。得到 S 之后，作者根据 @Algorithm1 进行枚举，每一轮只选一个让当前模型性能提升最大的特征，一直枚举直到加任何新特征都不能提升性能。除了电脑枚举，作者还加入了人工选择的特征进行矫正，最终你会得出最终特征集合 S。
 
-#figure(
-  table(
-    columns: (auto, 1fr, 1fr, 1fr),
-    align: (left, center, center, center),
-    stroke: 0.5pt,
-
-    table.header(
-      [*方法*], [*准确率 (%)*], [*精确率 (%)*], [*F1 值 (%)*],
-    ),
-
-    [Baseline],       [82.3], [80.1], [81.2],
-    [Method A],       [87.6], [85.4], [86.5],
-    [Method B],       [89.1], [88.2], [88.6],
-    [*Ours*],         [*92.4*], [*91.7*], [*92.0*],
-  ),
-  caption: [各方法在测试集上的实验结果对比],
-) <tab:results>
-
-从 @tab:results 可以看出，我们的方法在所有指标上均优于基线方法。
-
-#dashed-line
-
-== 图片示例
-
-@fig:example 展示了一个示例图片。请将实际图片文件放置在 `figures/` 目录下。
+#let indent = h(1.5em)
 
 #figure(
-  rect(width: 60%, height: 120pt, fill: luma(230), stroke: 0.5pt + luma(180))[
-    #align(center + horizon)[
-      #text(fill: luma(120), size: 10pt)[placeholder: 替换为实际图片 \ `image("figures/example.png")`]
+  // 使用三线表函数，设置为单列左对齐
+  three-line-table(
+    columns: (1fr),
+    align: left,
+    
+    // 表头：对应图片中的 "Algorithm 1 ..."
+    header: ([*Algorithm 1* Subroutine FIND-ALL-FEATURES],),
+
+    // 表格主体：放入一个内容块中
+    [
+      // 1. Require 部分
+      *Require:* The previously picked feature $p$, depth $d < "max_depth"$, vectors $V$ of token probabilities (from unigram, trigram, ada, and davinci models), scalar functions $F_s$, vector functions $F_v$ \
+      
+      // 2. Ensure 部分
+      *Ensure:* A list of all possible features \
+      
+      // 3. 算法逻辑主体
+      Let $S = emptyset$ \
+      *for all* scalar functions $f_s in F_s$ *do* \
+        #indent Add $f_s(p)$ to $S$ \
+      *end for* \
+      
+      *for all* combinations of features and vector functions $(p', f_v) in V times F_v$ *do* \
+
+        #indent Add Find-All-Features($f_v(p, p'), d + 1$) to $S$ \
+      *end for*
     ]
-  ],
-  caption: [示例图片（请替换为实际图片）],
-) <fig:example>
+  )
+)<Algorithm1>
 
-#tip-box[
-  使用实际图片时，将上方的 `rect(...)` 替换为：\
-  `image("figures/your-image.png", width: 80%)`
-]
+=== Classifier Training
 
-// ============================================================
-//  第四章 讨论
-// ============================================================
-= 讨论
+拿到特征集合 S 之后，作者使用一个简单的线性分类器（Logistic Regression）进行训练，最终得到一个鉴别文本是否由 LLM 生成的模型。关于这里为什么作者只使用 最简单的线性分类器，我们在后续的 Ablation Study 中进行分析。
 
-== 结果分析
+== Results
 
-实验结果表明，我们提出的方法在多个评测指标上取得了显著提升。具体而言：
+在 Metric 上，作者使用了 F1 Score 来评测模型性能，结果如 @Figure2 所示，Ghostbuster 在所有数据集上都显著优于之前的 SOTA 方法。同时还表现出了很好的泛化能力，例如在新闻上训练，在作文上测试仍然可行，说明 Ghostbuster 是学到了文本生成的通用特征进行鉴别。
 
-- *准确率*提高了约 10 个百分点
-- *F1 值*从 81.2% 提升至 92.0%
+#figure(
+  image("figures/Results.png", width: 90%),
+  caption: "Ghostbuster 在不同数据集上的表现",
+)<Figure2>
 
-== 局限性
+== Analysis
 
-#warning-box[
-  当前方法在以下场景中存在局限：大规模数据集的处理效率有待优化；模型在领域迁移时性能可能下降。
-]
+=== Ablation Study
 
-// ============================================================
-//  第五章 结论
-// ============================================================
-= 结论
+关于这里，作者主要分析了三方面： max_depth 和 feature selection 的重要性和分类器的选择。关于 max_depth，作者发现当 max_depth = 3 时性能最好，说明过于复杂的特征组合反而会导致过拟合。关于 feature selection，作者发现不使用人类提供的特征会导致模型泛化能力下降，说明人工选择的特征在模型训练中起到了重要的矫正作用。而分类器的选择上，使用复杂的分类方式（例如神经网络）反而导致性能下降，这是因为输入的特征本身经过了复杂模型处理的高级非线性信号了，再使用神经网络会导致过拟合。
 
-本文介绍了一个基于 Typst 的学术写作模版，演示了封面、目录、图表、公式及参考文献引用等常见功能。该模版可作为学术论文写作的起点，研究者可根据实际需求进行扩展和定制。
 
-// ============================================================
-//  参考文献
-// ============================================================
+
 #pagebreak()
 
 #bibliography("refs.bib", title: "参考文献", style: "ieee")

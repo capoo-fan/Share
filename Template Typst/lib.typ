@@ -86,6 +86,41 @@
   caption: caption,
 )
 
+/// 带编号的表格
+#let tab(content, caption: "") = figure(
+  content,
+  kind: table,
+  caption: caption,
+)
+
+#let three-line-table(
+  columns: auto,
+  align: center,
+  header: (),
+  ..data
+) = {
+  table(
+    columns: columns,
+    align: align,
+    stroke: none, // 禁用默认网格线
+
+    // 1. 顶线 (粗)
+    table.hline(y: 0, stroke: 1.5pt),
+
+    // 2. 表头区域 (包含下方的细分界线)
+    table.header(
+      ..header,
+      table.hline(stroke: 0.75pt) // 表头下的分界线 (细)
+    ),
+
+    // 3. 数据主体
+    ..data,
+
+    // 4. 底线 (粗)
+    table.hline(stroke: 1.5pt),
+  )
+}
+
 // --- 封面辅助 ---
 
 /// 封面信息条目
