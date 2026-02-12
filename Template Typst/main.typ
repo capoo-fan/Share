@@ -2,10 +2,10 @@
 // main.typ - Typst 学术写作模版
 // ============================================================
 
-#import "../lib.typ": *
+#import "./lib.typ": *
 
 // --- 全局页面设置 ---
-#set text(font: ("New Computer Modern", "Source Han Serif SC", "SimSun"), size: 11pt, lang: "zh")
+#set text(font: ("New Computer Modern", "Songti SC", "SimSun"), size: 11pt, lang: "zh")
 #set par(justify: true, leading: 0.8em, first-line-indent: 2em)
 #set heading(numbering: "1.1")
 #set math.equation(numbering: "(1)")
